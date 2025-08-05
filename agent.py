@@ -1,6 +1,8 @@
 from src.pubed_search import search_pubmed
+from src.summarizer import summarize_abstracts
 
 import argparse
+from dotenv import load_dotenv
 
 
 def parse():
@@ -14,7 +16,10 @@ def parse():
 
 if __name__ == '__main__':
     args = parse()
+    load_dotenv()
 
-    data = search_pubmed(args.email, query=args.query)
+    documents = search_pubmed(args.email, query=args.query)
 
-    print(data)
+    summary = summarize_abstracts(documents)
+
+    print(summary)

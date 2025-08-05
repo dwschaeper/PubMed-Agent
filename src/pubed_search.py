@@ -1,4 +1,6 @@
 from Bio import Entrez
+from langchain.docstore.document import Document
+
 
 def search_pubmed(email, query, max_results=5):
     Entrez.email = email
@@ -12,22 +14,29 @@ def search_pubmed(email, query, max_results=5):
     fetch_records = Entrez.read(fetch_handle)
 
     # collect the title and abstract
-    entries = []
+    documents = []
     for article in fetch_records["PubmedArticle"]:
+        pmid = article["MedlineCitation"]["PMID"]
+
         title = article["MedlineCitation"]["Article"]["ArticleTitle"]
 
         abstract_parts = article["MedlineCitation"]["Article"].get("Abstract", {}).get("AbstractText", [])
         abstract = " ".join(str(part) for part in abstract_parts)
 
-        entries.append({
-            "title": title,
-            "abstract": abstract
-        })
+        date = 'unknown'
+        article_date = article["MedlineCitation"]["Article"].get("ArticleDate", [])
+        if article_date:
+            year = article_date[0].get("Year", "")
+            month = article_date[0].get("Month", "")
+            day = article_date[0].get("Day", "")
+            date = f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+        else:
+            journal_date = article["MedlineCitation"]["Article"]["Journal"]["JournalIssue"]["PubDate"]
+            date = journal_date.get("Year", "unknown")
 
-    # format to return one data string
-    data = "\n\n".join([
-        f"Title: {entry['title']}\nAbstract: {entry['abstract']}"
-        for entry in entries
-    ])
+        doc = Document(page_content=f"Title: {title}\nAbstract: {abstract}\nPMID: {pmid}",
+                       metadata={"title": title, "date": date, "PMID": str(pmid)}
+                       )
+        documents.append(doc)
 
-    return data
+    return documents
