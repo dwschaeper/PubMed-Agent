@@ -1,8 +1,5 @@
-import os
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chat_models import init_chat_model
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
 from langchain_core.output_parsers import StrOutputParser
 
 
@@ -28,19 +25,23 @@ def combine_summaries(chain, summaries):
 
 def summarize_abstracts(documents):
     # define model
-    llm = init_chat_model("llama3-70b-8192", model_provider="groq")
+    llm = init_chat_model("llama3-8b-8192", model_provider="groq")
 
     # define prompts
-    summarize_prompt = PromptTemplate(input_variables=["text"],
-                                      template=("You're a biomedical research assistant. Summarize this"
-                                                " abstract with specific details. Include PMID in summary."
-                                                " ONLY print summary, don't say here it is.\n{text}"))
+    summarize_prompt = PromptTemplate(input_variables=["text"], template=("You're a biomedical research assistant. "
+                                                                          "Summarize this abstract with specific "
+                                                                          "details. You MUST include the PMID in summary."
+                                                                          " ONLY print summary, don't say here it is.\n{text}"))
 
     combine_prompt = PromptTemplate(input_variables=["text"],
-                                    template=("You are a scientific editor who has received the following "
-                                              " summaries that have multiple articles in them:\n\n{text}\n\nCombine all articles into a single"
-                                              " summary. Group the related papers together. Be sure to include PMID for each paper in summary"
-                                              " ONLY print summary, don't say here it is."))
+                                    template=("You are a scientific editor who has received the "
+                                              "following summaries that have multiple articles "
+                                              "in them:\n\n{text}\n\nCombine all articles into"
+                                              " a single summary. Group the related papers "
+                                              "together. You MUST include PMID for EACH paper "
+                                              "in summary. If combining similar summaries, "
+                                              "use all PMIDs associated with them. ONLY print"
+                                              " summary, don't say here it is."))
 
     # make chains
     summarize_chain = summarize_prompt | llm | StrOutputParser()
