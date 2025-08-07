@@ -1,3 +1,4 @@
+from src.input_processing import make_query
 from src.pubed_search import search_pubmed
 from src.summarizer import summarize_abstracts
 
@@ -18,7 +19,9 @@ if __name__ == '__main__':
     args = parse()
     load_dotenv()
 
-    documents = search_pubmed(args.email, query=args.query)
+    query = make_query(args.query)
+
+    documents = search_pubmed(args.email, query=query, max_results=50)
 
     summary = summarize_abstracts(documents)
 
