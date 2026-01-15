@@ -1,54 +1,44 @@
 from langchain.chat_models import init_chat_model
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-
 def single_summary(chain, document):
-    result = chain.invoke({'text': document.page_content})
-    return {'text': result.strip(), 'metadata': document.metadata}
+    """
+    Generate a summary of a single abstract.
 
+    Args:
+        chain (Chain):  The chain used to summarize an abstract.
+        document (str): The document data passed as a str from previous tool
 
-def combine_summaries(chain, summaries):
-    while len(summaries) > 1:
-        new_summaries = []
-        for i in range(0, len(summaries), 2):
-            if i + 1 < len(summaries):
-                combined_text = summaries[i]['text'] + "\n\n" + summaries[i + 1]['text']
-                result = chain.invoke({'text': combined_text})
-                new_summaries.append({'text': result.strip()})
-            else:
-                new_summaries.append(summaries[i])
-
-        summaries = new_summaries
-    return summaries[0]['text']
+    Return
+        dict: A dictionary that has the summary as the key, and metadata as the value
+    """
+    result = chain.invoke({'text': str(document)})
+    return result.strip()
 
 
 def summarize_abstracts(documents):
+    """
+    Summarize of LangChain Document objects containing PubMed abstracts.
+    
+    Args:
+        documents (list): List of documents data from the preious tool containing abstracts
+    
+    Return:
+        str: Complete summary of all contained abstracts 
+    """
     # define model
-    llm = init_chat_model("llama3-8b-8192", model_provider="groq")
+    llm = init_chat_model("llama-3.3-70b-versatile", model_provider="groq")
 
     # define prompts
-    summarize_prompt = PromptTemplate(input_variables=["text"], template=("You're a biomedical research assistant. "
-                                                                          "Summarize this abstract with specific "
-                                                                          "details. You MUST include the PMID in summary."
-                                                                          " ONLY print summary, don't say here it is.\n{text}"))
-
-    combine_prompt = PromptTemplate(input_variables=["text"],
-                                    template=("You are a scientific editor who has received the "
-                                              "following summaries that have multiple articles "
-                                              "in them:\n\n{text}\n\nCombine all articles into"
-                                              " a single summary. Group the related papers "
-                                              "together. You MUST include PMID for EACH paper "
-                                              "in summary. If combining similar summaries, "
-                                              "use all PMIDs associated with them. ONLY print"
-                                              " summary, don't say here it is."))
+    summarize_prompt = PromptTemplate(input_variables=["text"], template=("Summarize this abstract with specific details. Include PMID in summary.\n{text}"))
 
     # make chains
     summarize_chain = summarize_prompt | llm | StrOutputParser()
-    combine_chain = combine_prompt | llm | StrOutputParser()
 
     # make summary
     summaries = [single_summary(summarize_chain, document) for document in documents]
-    result = combine_summaries(combine_chain, summaries)
+    result = '\n'.join(summaries)
 
     return result
+
