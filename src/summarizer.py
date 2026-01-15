@@ -2,6 +2,7 @@ from langchain.chat_models import init_chat_model
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
+
 def single_summary(chain, document):
     """
     Generate a summary of a single abstract.
@@ -22,7 +23,7 @@ def summarize_abstracts(documents):
     Summarize of LangChain Document objects containing PubMed abstracts.
     
     Args:
-        documents (list): List of documents data from the preious tool containing abstracts
+        documents (list): List of documents data from the previous tool containing abstracts
     
     Return:
         str: Complete summary of all contained abstracts 
@@ -31,7 +32,8 @@ def summarize_abstracts(documents):
     llm = init_chat_model("llama-3.3-70b-versatile", model_provider="groq")
 
     # define prompts
-    summarize_prompt = PromptTemplate(input_variables=["text"], template=("Summarize this abstract with specific details. Include PMID in summary.\n{text}"))
+    summarize_prompt = PromptTemplate(input_variables=["text"],
+                                      template="Summarize this abstract with specific details. Include PMID in summary.\n{text}")
 
     # make chains
     summarize_chain = summarize_prompt | llm | StrOutputParser()
@@ -41,4 +43,3 @@ def summarize_abstracts(documents):
     result = '\n'.join(summaries)
 
     return result
-

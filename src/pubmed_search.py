@@ -1,8 +1,6 @@
-from .input_processing import retry_entrez_query
-
 from Bio import Entrez
-from urllib.parse import quote_plus
 from langchain_core.documents import Document
+
 
 def get_ids(email: str, entrez_query: str, max_results: int = 5):
     """
@@ -11,7 +9,7 @@ def get_ids(email: str, entrez_query: str, max_results: int = 5):
     Args:
         email (str):        e-mail addressed used with the Entrez query
         entrez_query (str): The query sent to Entrez
-        max_results (int):  The maxiumum number of abstracts to return from Entrez
+        max_results (int):  The maximum number of abstracts to return from Entrez
 
     Return:
         list: The list of abstract IDs
@@ -20,12 +18,12 @@ def get_ids(email: str, entrez_query: str, max_results: int = 5):
     """
     Entrez.email = email
 
-    handle = Entrez.esearch(db='pubmed', 
-        term=entrez_query, 
-        retmax=max_results, 
-        retmode="xml", 
-        usehistory='y'
-        )
+    handle = Entrez.esearch(db='pubmed',
+                            term=entrez_query,
+                            retmax=max_results,
+                            retmode="xml",
+                            usehistory='y'
+                            )
 
     record = Entrez.read(handle)
     handle.close()
@@ -36,15 +34,16 @@ def get_ids(email: str, entrez_query: str, max_results: int = 5):
 
     return ids, webenv, query_key
 
+
 def search_pubmed(entrez_query: str, email: str, max_results: int = 50):
     """
-    Generate the list of search Entrez to get the list of abstrac IDs, fetch data, and
+    Generate the list of search Entrez to get the list of abstract IDs, fetch data, and
     generate documents.
 
     Args:
         email (str): e-mail addressed used with the Entrez query
         entrez_query (str): The query sent to Entrez
-        max_results (int):  The maxiumum number of abstracts to return from Entrez
+        max_results (int):  The maximum number of abstracts to return from Entrez
 
     Return:
         list: The collection of documents
@@ -52,23 +51,20 @@ def search_pubmed(entrez_query: str, email: str, max_results: int = 50):
     ids, webenv, query_key = get_ids(email, entrez_query, max_results)
 
     if len(ids) == 0:
-        entrez_query = retry_entrez_query(entrez_query)
-        ids, webenv, query_key = get_ids(email, entrez_query, max_results)
-    if len(ids) == 0:
         return []
 
     # Fetch XML data
-    fetch_handle = Entrez.efetch(db="pubmed", 
-        id=",".join(ids), 
-        rettype="xml",
-        retmode="xml",
-        webenv=webenv,
-        query_key=query_key)
+    fetch_handle = Entrez.efetch(db="pubmed",
+                                 id=",".join(ids),
+                                 rettype="xml",
+                                 retmode="xml",
+                                 webenv=webenv,
+                                 query_key=query_key)
     fetch_records = Entrez.read(fetch_handle)
 
     # collect the title and abstract
     documents = []
-    for article in fetch_records["PubmedArticle"]:        
+    for article in fetch_records["PubmedArticle"]:
         pmid = article["MedlineCitation"]["PMID"]
 
         title = article["MedlineCitation"]["Article"]["ArticleTitle"]
@@ -76,7 +72,6 @@ def search_pubmed(entrez_query: str, email: str, max_results: int = 50):
         abstract_parts = article["MedlineCitation"]["Article"].get("Abstract", {}).get("AbstractText", [])
         abstract = " ".join(str(part) for part in abstract_parts)
 
-        date = 'unknown'
         article_date = article["MedlineCitation"]["Article"].get("ArticleDate", [])
         if article_date:
             year = article_date[0].get("Year", "")
@@ -91,5 +86,5 @@ def search_pubmed(entrez_query: str, email: str, max_results: int = 50):
                        metadata={"title": title, "date": date, "PMID": str(pmid)}
                        )
         documents.append(doc)
-        
+
     return documents
