@@ -1,16 +1,24 @@
-from .input_processing import make_entrez_query
+from .input_processing import make_entrez_query, remake_entrez_query
 from .pubmed_search import search_pubmed
 from .summarizer import summarize_abstracts
 
 from langchain.tools import tool
 
-@tool("make_pubmed_query")
-def make_pubmed_query_tool(query: str) -> str:
+@tool("make_entrez_query")
+def make_entrez_query_tool(query: str) -> str:
     """
     Convert a natrual language question into a high-quality Entrez 
     efetch search string.
     """
     return make_entrez_query(query)
+
+@tool("remake_entrez_query')
+def remake_entrez_query_tool(bad_query: str) -> str:
+    """
+    Loosen, simplify, or reowkr a PubMed/Entrez query that returned 0 results. Remove overly strict filters, rare fields,
+    and excessive AND clauses.
+    """
+    return remake_entrez_query(bad_query)
 
 @tool("search_pubmed")
 def search_pubmed_tool(email: str, query: str) -> list:

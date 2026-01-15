@@ -22,18 +22,22 @@ def make_entrez_query(user_query: str):
     return result.strip()
 
 
-def retry_entrez_query(bad_query: str):
+def remake_entrez_query(bad_query: str):
     """
-    Revise an Entrez/PubMed query that failed to return any abstracts.
+    Revise an Entrez/PubMed query that returned no results.
 
     Args:
         bad_query (str): The preiously used query that did not find abstracts
     Return:
         str: Revised query
     """
-    llm = init_chat_model("llama-3.1-8b-instant", model_provider="groq")
+    llm = init_chat_model("llama-3.3-70b-versatile", model_provider="groq")
 
-    prompt = PromptTemplate(input_variables=["bad_query"], template=("This query for Entrez efetch search from biopython did not successfully return any abstracts. Adjust it to have it work.\n{bad_query}"))
+    prompt = PromptTemplate(input_variables=["bad_query"], template=("""This query '{bad_query}' for Entrez efetch search from biopython did not successfully return any abstracts. Follow this strategy to make it work
+        - remove overly strict fields
+        - reduce excessive AND contraints
+        - prefer OR when reasonable
+        - keep original intent"""))
 
     chain = prompt | llm | StrOutputParser()
     result = chain.invoke({"bad_query": bad_query})

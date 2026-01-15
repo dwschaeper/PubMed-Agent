@@ -4,7 +4,7 @@ from Bio import Entrez
 from urllib.parse import quote_plus
 from langchain_core.documents import Document
 
-def get_ids(email: str, entrez_query: str, max_results: int = 50):
+def get_ids(email: str, entrez_query: str, max_results: int = 5):
     """
     Send entrez_query to get the IDs, WebEnv, and QueryKey.
 
@@ -55,7 +55,7 @@ def search_pubmed(entrez_query: str, email: str, max_results: int = 50):
         entrez_query = retry_entrez_query(entrez_query)
         ids, webenv, query_key = get_ids(email, entrez_query, max_results)
     if len(ids) == 0:
-        raise ValueError("Entrez query returned no results after retry.")
+        return []
 
     # Fetch XML data
     fetch_handle = Entrez.efetch(db="pubmed", 
