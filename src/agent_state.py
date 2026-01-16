@@ -8,7 +8,8 @@ class AgentState(BaseModel):
     query_ready: bool = False
     documents: Optional[List[dict]] = None
     pubmed_searched: bool = False
+    pubmed_search_failed: bool = None
     summary: Optional[str] = None
+    ordered_action_history: List[list] = []
     errors: List[str] = []
     done: bool = False
-    thoughts: List[str] = []
