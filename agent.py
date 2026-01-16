@@ -1,5 +1,5 @@
 import argparse
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 from src.agent_loop import run_agent
@@ -25,10 +25,6 @@ if __name__ == '__main__':
     load_dotenv()
 
     final_state = run_agent(user_query=args.query, email=args.email)
-
-    print("\n--- AGENT THOUGHTS ---\n")
-    for t in final_state.thoughts:
-        print("-", t)
 
     print("\n--- FINAL SUMMARY ---\n")
     print(final_state.summary)

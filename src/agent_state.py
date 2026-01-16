@@ -7,7 +7,7 @@ class AgentState(BaseModel):
     entrez_query: Optional[str] = None
     query_ready: bool = False
     documents: Optional[List[dict]] = None
-    num_documents: int = 0
+    pubmed_searched: bool = False
     summary: Optional[str] = None
     errors: List[str] = []
     done: bool = False

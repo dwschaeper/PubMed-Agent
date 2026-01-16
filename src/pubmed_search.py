@@ -35,7 +35,7 @@ def get_ids(email: str, entrez_query: str, max_results: int = 5):
     return ids, webenv, query_key
 
 
-def search_pubmed(entrez_query: str, email: str, max_results: int = 50):
+def search_pubmed(entrez_query: str, email: str, max_results: int = 5):
     """
     Generate the list of search Entrez to get the list of abstract IDs, fetch data, and
     generate documents.

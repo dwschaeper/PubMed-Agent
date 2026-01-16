@@ -1,9 +1,12 @@
 from .agent_state import AgentState
 from .tools import make_entrez_query_tool, remake_entrez_query_tool, search_pubmed_tool, summarize_abstracts_tool
+from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
+
+load_dotenv()
 llm = init_chat_model("llama-3.3-70b-versatile", model_provider="groq")
 
 PLANNER_PROMPT = """
@@ -18,14 +21,13 @@ PLANNER_PROMPT = """
     - search_pubmed(email, query)
     - summarize_abstracts(documents)
 
-    Follow this logic in order:
-    1. Carefully review the current state too see what has been done so far and what is accomplished.
-    2. If entrez query in current state is None, generate a query with make_entrez_query.
-    3. Take the entrez query and use it to search PubMed for abstracts with search_pubmed.
-    4. If search_pubmed returned zero documents, call remake_entrez_query or regenerate with make_pubmed_query.
-    5. If documents exist but no summary, call summarize_abstracts.
-    6. If summary exists, mark done=True.
-    7. Capture reasoning at each step.
+    Follow this logic to make a decision on what to do next:
+    - If entrez_query in current state is None, generate a query with make_entrez_query.
+    - Take entrez_query and use it to search PubMed for abstracts with search_pubmed.
+    - If PubMed has been searched and 0 documents were found, make a different query with remake_entrez_query or regenerate with make_pubmed_query.
+    - If documents exist but no summary, call summarize_abstracts.
+    - If summary exists, mark done=True.
+    - Capture reasoning at each step.
 
     Return JSON only in this format:
     {{
@@ -69,22 +71,16 @@ def run_agent(user_query: str, email: str):
 
         try:
             if action == "make_entrez_query":
-                print('\tmaking query...')
                 state.entrez_query = make_entrez_query_tool.func(**args)
                 state.query_ready = True
             elif action == "remake_entrez_query":
-                print('\tremaking query...')
                 state.entrez_query = remake_entrez_query_tool.func(**args)
             elif action == "search_pubmed":
-                print('\tsearching pubmed...')
                 state.documents = search_pubmed_tool.func(**args)
-                state.num_documents = len(state.documents)
+                state.pubmed_searched = True
             elif action == "summarize_abstracts":
-                print('\tsummarizing...')
                 state.summary = summarize_abstracts_tool.func(state.documents)
                 state.done = True
-            else:
-                print('No function called!')
         except Exception as e:
             state.errors.append(str(e))
             state.thoughts.append(f"Error encountered: {str(e)}")
