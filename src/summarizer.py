@@ -29,7 +29,7 @@ def summarize_abstracts(documents):
         str: Complete summary of all contained abstracts 
     """
     # define model
-    llm = init_chat_model("llama-3.3-70b-versatile", model_provider="groq")
+    llm = init_chat_model("llama-3.1-8b-instant", model_provider="groq")
 
     # define prompts
     summarize_prompt = PromptTemplate(input_variables=["text"],

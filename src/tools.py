@@ -1,6 +1,6 @@
-from input_processing import make_entrez_query, remake_entrez_query
-from pubmed_search import search_pubmed
-from summarizer import summarize_abstracts
+from .input_processing import make_entrez_query, remake_entrez_query
+from .pubmed_search import (search_pubmed)
+from .summarizer import summarize_abstracts
 
 from langchain.tools import tool
 
