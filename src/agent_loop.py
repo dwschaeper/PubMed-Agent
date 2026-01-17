@@ -22,7 +22,7 @@ PLANNER_PROMPT = """
     - summarize_abstracts(documents)
 
     Use this logic to make a decision on what to do next:
-    - Utilize the action history, looping is an unnacceptable behavior. This will be especially helpful if a query fails to know what step was previously performed.
+    - Utilize the action history, looping is an unacceptable behavior. This will be especially helpful if a query fails to know what step was previously performed.
     - If entrez_query in current state is None, generate a query with make_entrez_query.
     - Take entrez_query and use it to search PubMed for abstracts with search_pubmed. pubmed_search_failed state will reflect the result.
     - If PubMed search failed, retry making the query with remake_entrez_query or make_entrez_query.
@@ -68,7 +68,7 @@ def state_view(state: AgentState):
     print('\tEmail:', state.email)
     print('\tEntrez query:', state.entrez_query)
     print('\tQuery ready:', state.query_ready)
-    print('\tDocuments:', state.documents)
+    print('\tNumber of documents:', state.num_documents)
     print('\tPubMed searched:', state.pubmed_searched)
     print('\tPubMed search failed:', state.pubmed_search_failed)
     print('\tErrors:', state.errors)
@@ -116,6 +116,7 @@ def run_agent(user_query: str, email: str):
                     state.pubmed_search_failed = True
                 else:
                     state.pubmed_search_failed = False
+                    state.num_documents = len(state.documents)
             elif action == "summarize_abstracts":
                 state.summary = summarize_abstracts_tool.func(state.documents)
                 state.done = True

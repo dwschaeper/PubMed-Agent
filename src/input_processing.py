@@ -17,7 +17,7 @@ def make_entrez_query(user_query: str):
     llm = init_chat_model("llama-3.1-8b-instant", model_provider="groq")
 
     prompt = PromptTemplate(input_variables=["user_query"], template=(
-        "Take the query and convert it into a high quality search for PubMed, no code, just the raw search string with no special characters. Return ONLY the query and nothing else.\n{user_query}"))
+        "Take the query and convert it into a high quality search for PubMed, no code. Return ONLY the query and nothing else.\n{user_query}"))
 
     chain = prompt | llm | StrOutputParser()
     result = chain.invoke({"user_query": user_query})
@@ -36,7 +36,7 @@ def remake_entrez_query(bad_query: str):
     """
     llm = init_chat_model("llama-3.1-8b-instant", model_provider="groq")
 
-    prompt = PromptTemplate(input_variables=["bad_query"], template=("""This query '{bad_query}' for Entrez efetch search from biopython did not successfully return any abstracts. Follow this strategy to make it work
+    prompt = PromptTemplate(input_variables=["bad_query"], template=("""This query '{bad_query}' for PubMed did not successfully return any abstracts. Follow this strategy to make it work
         - remove overly strict fields
         - reduce excessive AND constraints
         - prefer OR when reasonable
