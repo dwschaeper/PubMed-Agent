@@ -37,7 +37,7 @@ PLANNER_PROMPT = """
        "reasoning": "Explain why this tool was chosen next."
     }}
         
-    ONLY OUTPUT THE JSON AS SPECIFIED ABOVE
+    ONLY OUTPUT THE JSON AS SPECIFIED ABOVE AS RAW TEXT, NOT CONTAINED IN MARKDOWN OR CODE
     """
 
 def planner(state: AgentState):

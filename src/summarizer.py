@@ -33,7 +33,7 @@ def summarize_abstracts(documents):
 
     # define prompts
     summarize_prompt = PromptTemplate(input_variables=["text"],
-                                      template="Summarize this abstract with specific details. Include PMID in summary.\n{text}")
+                                      template="Summarize this abstract with specific details. Provide the summary in this format: title and PMID followed by summary with details but no extra headings.\n{text}")
 
     # make chains
     summarize_chain = summarize_prompt | llm | StrOutputParser()
