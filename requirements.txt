@@ -1,0 +1,5 @@
+langchain==1.2.3
+python-dotenv==1.2.1
+langchain-core==1.2.7
+pydantic==2.12.5
+biopython==1.81
