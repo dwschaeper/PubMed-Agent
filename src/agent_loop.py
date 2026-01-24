@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from .agent_state import AgentState
 from .tools import make_entrez_query_tool, remake_entrez_query_tool, search_pubmed_tool, summarize_abstracts_tool
 from dotenv import load_dotenv
@@ -20,15 +22,20 @@ PLANNER_PROMPT = """
     - remake_entrez_query(bad_query)
     - search_pubmed(email, query)
     - summarize_abstracts(documents)
+    - request_human_review_query(query)
+    - request_human_review_documents(documents)
 
     Use this logic to make a decision on what to do next:
     - Utilize the action history, looping is an unacceptable behavior. This will be especially helpful if a query fails to know what step was previously performed.
     - If entrez_query in current state is None, generate a query with make_entrez_query.
+    - A human must review the query with request_human_review.
     - Take entrez_query and use it to search PubMed for abstracts with search_pubmed. pubmed_search_failed state will reflect the result.
     - If PubMed search failed, retry making the query with remake_entrez_query or make_entrez_query.
-    - If documents exist but no summary, call summarize_abstracts.
+    - A human must review the query with request_human_review_documents.
+    - After the documents are approved, summarize. Check action history, if documents have not been sent for approval, do not summarize.
     - If summary exists, mark done=True.
-    - Capture reasoning at each step.
+    - Provide a brief justification referencing the state fields used.
+
 
     Return JSON only in this format:
     {{
@@ -68,9 +75,11 @@ def state_view(state: AgentState):
     print('\tEmail:', state.email)
     print('\tEntrez query:', state.entrez_query)
     print('\tQuery ready:', state.query_ready)
+    print('\tQuery approved by user:', state.query_approved)
     print('\tNumber of documents:', state.num_documents)
     print('\tPubMed searched:', state.pubmed_searched)
     print('\tPubMed search failed:', state.pubmed_search_failed)
+    print('\tDocuments approved by user:', state.documents_approved)
     print('\tErrors:', state.errors)
     print('\tDone:', state.done)
 
@@ -87,6 +96,7 @@ def run_agent(user_query: str, email: str):
         AgentState: The current state of the agent
     """
     state = AgentState(user_query=user_query, email=email)
+    previous_state = deepcopy(state)
 
     while not state.done:
         decision = planner(state)
@@ -120,7 +130,45 @@ def run_agent(user_query: str, email: str):
             elif action == "summarize_abstracts":
                 state.summary = summarize_abstracts_tool.func(state.documents)
                 state.done = True
+            elif action == 'request_human_review_query':
+                print("\n[HUMAN REVIEW REQUIRED]")
+                print("Proposed query:\n", args["query"])
+
+                decision = input("Approve this query? (y / edit / n): ")
+
+                if decision.lower() == 'y':
+                    state.query_approved = True
+                elif decision.lower() == 'edit':
+                    edited = input('Enter revised query:\n')
+                    state.entrez_query = edited
+                    state.query_approved = True
+                else:
+                    state.entrez_query = None
+                    state.human_demand = 'make_entrez_query'
+                    state.query_ready = False
+            elif action == "request_human_review_documents":
+                print("\n[HUMAN REVIEW REQUIRED]")
+                print("Proposed documents:\n")
+                for document in state.documents:
+                    print('\t', document['title'])
+
+                decision = input("Approve these documents? (y / edit / n): ")
+
+                if decision.lower() == 'y':
+                    state.query_ready = True
+                    state.documents_approved = True
+                else:
+                    state.entrez_query = None
+                    state.human_demand = 'make_entrez_query'
+
         except Exception as e:
             state.errors.append(str(e))
+
+        # state updating
+        if state.human_demand == action:
+            state.human_demand = None
+        if not previous_state.query_approved and (action == 'make_entrez_query' or action == 'remake_entrez_query'):
+            state.query_approved = None
+
 
     return state

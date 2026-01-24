@@ -17,7 +17,7 @@ def make_entrez_query(user_query: str):
     llm = init_chat_model("llama-3.1-8b-instant", model_provider="groq")
 
     prompt = PromptTemplate(input_variables=["user_query"], template=(
-        "Take the query and convert it into a high quality search for PubMed, no code. Return ONLY the query and nothing else.\n{user_query}"))
+        "Take the query and convert it into a high quality search for PubMed, no code or escape characters. Return ONLY the query and nothing else.\n{user_query}"))
 
     chain = prompt | llm | StrOutputParser()
     result = chain.invoke({"user_query": user_query})
